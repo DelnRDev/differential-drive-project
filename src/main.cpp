@@ -1,6 +1,11 @@
 #include <Arduino.h>
-#include <Adafruit_MPU6050.h>
 #include <Wire.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+
+
 
 double clampVal(double lowerBound, double upperBound, double val){
 
@@ -52,10 +57,10 @@ public:
 
   //ISR
   unsigned long prevPulseCheckTime = 0;
-  unsigned long incrementDebounceTime = 500;
+  unsigned long incrementDebounceTime = 0;
 
   //RPM
-  long prevPulseCount;
+  long prevPulseCount = 0;
   double currentRPM = 0.0;
   //double prevRPM = 0.0;
 
@@ -89,11 +94,13 @@ public:
     noInterrupts();
     long currentPulseCount = totalPulseCount;
     interrupts();
-
+    //Serial.println(currentPulseCount);
     long deltaPulseCount = currentPulseCount - prevPulseCount;
 
-    currentRPM = (deltaPulseCount / pulsePerRev) * (60.0 / dt);
+    currentRPM = (deltaPulseCount / (double)pulsePerRev) * (60.0 / dt);
+     Serial.println(currentRPM);
 
+    prevPulseCount = currentPulseCount;
   }
 
   double getRPM(){
@@ -161,7 +168,7 @@ public:
     double Kp = 2.0;
     double Ki = 0.1;
 
-    double rpmError = currentRPM - prevRPM;
+    double rpmError = targetRPM - currentRPM;
 
     double maxIntegralRPMContribution = 40;
     
@@ -183,7 +190,7 @@ public:
     }else if(u < 0 && u > -minRPM){
       u = -minRPM;
     }
-
+    Serial.println(currentRPM);
     setMotorByPWM(u);
 
 
@@ -226,23 +233,23 @@ public:
 };
 
 
-int LEncoderPin = 2;
-int REncoderPin = 3;
+int LEncoderPin = 3;
+int REncoderPin = 2;
 
-int AIN1 = 4;
-int AIN2 = 9;
-int PWMA = 10;
+int AIN1 = 8;
+int AIN2 = 7;
+int PWMA = 5;
 
-int BIN1 = 6;
-int BIN2 = 7;
-int PWMB = 5;
+int BIN1 = 9;
+int BIN2 = 10;
+int PWMB = 6;
 
-Adafruit_MPU6050 imu;
+Adafruit_MPU6050 mpu;
 
 Encoder leftEncoder(LEncoderPin);
 Encoder rightEncoder(REncoderPin);
-Motor leftMotor(AIN1, AIN2, PWMA, &leftEncoder);
-Motor rightMotor(BIN2, BIN1, PWMB, &rightEncoder);
+Motor leftMotor(BIN1, BIN2, PWMB, &leftEncoder);
+Motor rightMotor(AIN2, AIN1, PWMA, &rightEncoder);
 
 Drivetrain drivetrain(&leftEncoder, &rightEncoder, &leftMotor, &rightMotor);
 
@@ -255,38 +262,40 @@ void rightEncoderISR(){
   rightEncoder.pulseIncrement();
 }
 
-unsigned long prevTime;
+unsigned long prevEncoderUpdateTime;
 
 double encoderPeriod = 10000;
 
+Adafruit_SSD1306 display(128, 64, &Wire, -1);
+
 void setup() {
 
-  prevTime = micros();
+  prevEncoderUpdateTime = micros();
 
-  Serial.begin(9600);
-
-  drivetrain.begin();
-
-  imu.begin();
-   
+  Serial.begin(115200);
   
 
   attachInterrupt(digitalPinToInterrupt(LEncoderPin), leftEncoderISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(REncoderPin), rightEncoderISR, FALLING);
 }
 
+unsigned long updatePIDPeriod = 10000;
+unsigned long updateEncoderPeriod = 50000;
+
 void loop() {
-
+  /*
   unsigned long currentTime = micros();
+  //Serial.println(currentTime - prevEncoderUpdateTime);
+  if(currentTime - prevEncoderUpdateTime >= updateEncoderPeriod){
+    double dt = (currentTime - prevEncoderUpdateTime)/ 1000000.0;
+    leftEncoder.updateRPM(dt);
 
- if(currentTime - prevTime >= encoderPeriod){
-
-  double dt = (currentTime - prevTime) / 1000000.0;
-
-  leftEncoder.updateRPM(dt);
-  rightEncoder.updateRPM(dt);
-
- }
-
+    //Serial.println(leftEncoder.getRPM());
+    leftMotor.setMotorByRPM(200,dt);
+    prevEncoderUpdateTime = currentTime;
+  }
+  */
+  Serial.println(leftEncoder.totalPulseCount);
+ 
 }
 
