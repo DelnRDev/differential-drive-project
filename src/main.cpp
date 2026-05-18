@@ -1,11 +1,21 @@
 #include <Arduino.h>
+
 #include <Wire.h>
 #include <Adafruit_MPU6050.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 
+double wrapAngleDeg(double angle){
 
+  while(angle < -180.0){
+    angle += 360.0;
+  }
 
+  while(angle >= 180.0){
+    angle -= 360.0;
+  }
+
+  return angle;
+
+}
 
 double clampVal(double lowerBound, double upperBound, double val){
 
@@ -14,23 +24,9 @@ double clampVal(double lowerBound, double upperBound, double val){
   }else if(val > upperBound){
     return upperBound;
   }
-
+  
   return val;
-
-}
-
-double wrapAngleDeg(double angle){
-
-  while(angle < -180){
-    angle += 360;
-  }
-
-  while (angle >= 180){
-    angle -= 360;
-  }
-
-  return angle;
-
+  
 }
 
 double wrapAngleRad(double angle){
@@ -39,7 +35,7 @@ double wrapAngleRad(double angle){
     angle += 2 * PI;
   }
 
-  while (angle >= PI){
+  while(angle >= PI){
     angle -= 2 * PI;
   }
 
@@ -47,66 +43,35 @@ double wrapAngleRad(double angle){
 
 }
 
-
-
 class Encoder{
 public:
+
   int encoderPin;
-  int pulsePerRev = 40;
   volatile long totalPulseCount = 0;
 
   //ISR
-  unsigned long prevPulseCheckTime = 0;
-  unsigned long incrementDebounceTime = 0;
+  unsigned long debounceTime = 500;
+  unsigned long prevPulseUpdateTime;
 
-  //RPM
-  long prevPulseCount = 0;
-  double currentRPM = 0.0;
-  //double prevRPM = 0.0;
-
-  int direction = 1;
+  
 
   Encoder(int pin):encoderPin(pin){
 
   }
 
   void begin(){
-
     pinMode(encoderPin, INPUT_PULLUP);
-
   }
 
   void pulseIncrement(){
-
+    
     unsigned long currentTime = micros();
 
-    if(currentTime - prevPulseCheckTime > incrementDebounceTime){
-
+    if(currentTime - prevPulseUpdateTime >= debounceTime){
       totalPulseCount++;
-
-      prevPulseCheckTime = currentTime;
+      prevPulseUpdateTime = currentTime;
     }
 
-  }
-
-  void updateRPM(double dt){
-
-    noInterrupts();
-    long currentPulseCount = totalPulseCount;
-    interrupts();
-    //Serial.println(currentPulseCount);
-    long deltaPulseCount = currentPulseCount - prevPulseCount;
-
-    currentRPM = (deltaPulseCount / (double)pulsePerRev) * (60.0 / dt);
-     Serial.println(currentRPM);
-
-    prevPulseCount = currentPulseCount;
-  }
-
-  double getRPM(){
-
-    return currentRPM;
-    
   }
 
 };
@@ -114,22 +79,12 @@ public:
 class Motor{
 public:
 
-  Encoder* encoder;
-
   int pin1;
-  int pin2;
+  int pin2; 
   int pwmPin;
 
-  int direction = 1;
-
-  //setMotorByRPM
-  int minRPM = 30;
-  int maxRPM = 255;
-  double prevRPM = 0.0;
-  double errorIntegral = 0.0;
-
-  Motor(int a, int b, int pwm,  Encoder* edr):pin1(a), pin2(b), pwmPin(pwm), encoder(edr){
-
+  Motor(int a, int b, int pwm):pin1(a), pin2(b), pwmPin(pwm){
+     
   }
 
   void begin(){
@@ -139,68 +94,105 @@ public:
   }
 
   void setMotorByPWM(int pwm){
-
     if(pwm > 0){
-      direction = 1;
-      encoder->direction = 1;
       digitalWrite(pin1, LOW);
       digitalWrite(pin2, HIGH);
       analogWrite(pwmPin, pwm);
-    }else if (pwm < 0){
-      direction = -1;
-      encoder->direction = -1;
-      digitalWrite(pin1, HIGH);
-      digitalWrite(pin2, LOW);
+    }else if(pwm < 0){
+      digitalWrite(pin1, LOW);
+      digitalWrite(pin2, HIGH);
       analogWrite(pwmPin, -pwm);
     }else{
       digitalWrite(pin1, LOW);
       digitalWrite(pin2, LOW);
       analogWrite(pwmPin, 0);
     }
-
   }
-  
-  void setMotorByRPM(int targetRPM, double dt){
-    //test this function
-
-    double currentRPM = encoder->getRPM();
-
-    double Kp = 2.0;
-    double Ki = 0.1;
-
-    double rpmError = targetRPM - currentRPM;
-
-    double maxIntegralRPMContribution = 40;
-    
-    errorIntegral += rpmError * dt;
-
-    //prevent intgral windup
-    if(errorIntegral > 0 && Ki * errorIntegral > maxIntegralRPMContribution){
-      errorIntegral = maxIntegralRPMContribution / Ki;
-    }else if(errorIntegral < 0 && Ki * Ki * errorIntegral < -maxIntegralRPMContribution ){
-      errorIntegral = -maxIntegralRPMContribution / Ki;
-    }
-
-    double u = Kp * rpmError + Ki * errorIntegral;
-
-    u = clampVal(-maxRPM, maxRPM, u);
-
-    if(u > 0 && u < minRPM){
-      u = minRPM;
-    }else if(u < 0 && u > -minRPM){
-      u = -minRPM;
-    }
-    Serial.println(currentRPM);
-    setMotorByPWM(u);
-
-
-
-
-  }
-  
 
 };
 
+class IMUHeading{
+private:
+  double theta = 0.0;
+  double omegaZBias = 0.0;
+public:
+
+  Adafruit_MPU6050 mpu;
+
+  //calibration
+  int numberOfSample = 1000;
+
+  //heading
+  double alpha = 0.3;
+  double prevFilteredOmega = 0.0;
+  double prevTheta = 0.0;
+
+  IMUHeading(){
+
+  }
+
+  void begin(){
+
+    if(!mpu.begin(0x68)){
+      Serial.println("MPU6050 init failed");
+      while(1);
+    }
+
+    Serial.println("MPU6050 connected");
+    
+    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  }
+
+  void calibrate(){
+
+    sensors_event_t accel, gyro, temp;
+    mpu.getEvent(&accel, &gyro, &temp);
+    
+    double rawOmegaZ = gyro.gyro.z;
+
+    double sampleSum = 0.0;
+
+    for(int i = 0; i < numberOfSample; i++){
+      sampleSum += rawOmegaZ;
+    }
+
+    omegaZBias = sampleSum / numberOfSample;
+
+  }
+
+  double getCalibratedOmegaZ(){
+    
+    sensors_event_t accel, gyro, temp;
+    mpu.getEvent(&accel, &gyro, &temp);
+    
+    double rawOmegaZ = gyro.gyro.z;
+
+    return rawOmegaZ - omegaZBias;
+
+  }
+
+  
+
+  void updateHeading(double dt){
+
+    double calibratedOmegaZ = getCalibratedOmegaZ();
+
+    double filteredOmegaZ = alpha * calibratedOmegaZ + (1 - alpha) * prevFilteredOmega;
+
+    double theta = prevTheta + filteredOmegaZ * dt;
+
+    prevFilteredOmega = filteredOmegaZ;
+    prevTheta = theta;
+
+  }
+
+  double getTheta(){
+    return theta;
+  }
+
+};
 
 class Drivetrain{
 public:
@@ -210,92 +202,153 @@ public:
   Motor* lMtr;
   Motor* rMtr;
 
-  Drivetrain(Encoder* leftEdr, Encoder* rightEdr, Motor* leftMtr, Motor* rightMtr):lEdr(leftEdr), rEdr(rightEdr), lMtr(leftMtr), rMtr(rightMtr){
+  IMUHeading* imuhding;
+
+  //turnPID
+  int maxPWM = 255;
+  int minPWM = 40;
+  int maxIntegral = 200;
+
+  double errorIntegral = 0.0;
+  double prevThetaError = 0.0;
+
+  Drivetrain(Encoder* leftEdr, Encoder* rightEdr, Motor* leftMtr, Motor* rightMtr, IMUHeading* imuhd):lEdr(leftEdr), rEdr(rightEdr), lMtr(leftMtr), rMtr(rightMtr), imuhding(imuhd){
 
   }
 
   void begin(){
-
     lEdr->begin();
     rEdr->begin();
     lMtr->begin();
     rMtr->begin();
-
+    imuhding->begin();
   }
 
   void setDriveByPWM(int leftPWM, int rightPWM){
-
     lMtr->setMotorByPWM(leftPWM);
     rMtr->setMotorByPWM(rightPWM);
+  }
+
+  void turnToDeg(double targetTheta, double dt){//directly using PWM, unit:degree, this is relative to the initial theta
+
+    targetTheta = wrapAngleDeg(targetTheta);
+
+  
+
+    double Kp;
+    double Kd;
+    double Ki;
+
+    double currentTheta = imuhding->getTheta();
+    double thetaError = targetTheta - currentTheta;
+
+    double tolerance = 1.0;
+    if(abs(thetaError) < tolerance){
+      return;
+    }
+
+    errorIntegral += thetaError * dt;
+    errorIntegral = clampVal(-maxIntegral, maxIntegral, errorIntegral);
+
+    double errorDerivative = (thetaError - prevThetaError) / dt;
+
+    double u = Kp * thetaError + Ki * errorIntegral + Kd * errorDerivative;
+
+    u = clampVal(-maxPWM, maxPWM, u);
+
+    if(u > 0 && u < minPWM){
+      u = minPWM;
+    }else if(u < 0 && u > -minPWM){
+      u = -minPWM;
+    }
+
+    setDriveByPWM(-u, u);
+
 
   }
 
 };
 
 
-int LEncoderPin = 3;
-int REncoderPin = 2;
 
-int AIN1 = 8;
-int AIN2 = 7;
-int PWMA = 5;
+//==================================
 
-int BIN1 = 9;
-int BIN2 = 10;
-int PWMB = 6;
+int LEncoderPin;
+int REncoderPin;
+int AIN1;
+int AIN2;
+int PWMA;
+int BIN1;
+int BIN2;
+int PWMB;
 
-Adafruit_MPU6050 mpu;
+//==================================
+unsigned long prevIMUUpdateTime;
+unsigned long prevControlUpdateTime;
+
+unsigned long imuUpdatePeriod = 500;
+unsigned long controlUpdatePeriod = 10000;
+
+
+//==================================
+int LEncoderPin;
+int REncoderPin;
+int AIN1;
+int AIN2;
+int PWMA;
+int BIN1;
+int BIN2;
+int PWMB;
+
+//==================================
 
 Encoder leftEncoder(LEncoderPin);
 Encoder rightEncoder(REncoderPin);
-Motor leftMotor(BIN1, BIN2, PWMB, &leftEncoder);
-Motor rightMotor(AIN2, AIN1, PWMA, &rightEncoder);
+Motor leftMotor(BIN1, BIN2, PWMB);
+Motor rightMotor(AIN1, AIN2, PWMA);
 
-Drivetrain drivetrain(&leftEncoder, &rightEncoder, &leftMotor, &rightMotor);
+IMUHeading imuHeading;
+Drivetrain drivetrain(&leftEncoder, &rightEncoder, &leftMotor, &rightMotor, &imuHeading);
 
 
-void leftEncoderISR(){
-  leftEncoder.pulseIncrement();
-}
+//==================================
 
-void rightEncoderISR(){
-  rightEncoder.pulseIncrement();
-}
 
-unsigned long prevEncoderUpdateTime;
-
-double encoderPeriod = 10000;
-
-Adafruit_SSD1306 display(128, 64, &Wire, -1);
-
-void setup() {
-
-  prevEncoderUpdateTime = micros();
+void setup(){
 
   Serial.begin(115200);
-  
+  delay(1000);
+  Wire.begin();
+  delay(100);
+  drivetrain.begin();
 
-  attachInterrupt(digitalPinToInterrupt(LEncoderPin), leftEncoderISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(REncoderPin), rightEncoderISR, FALLING);
-}
-
-unsigned long updatePIDPeriod = 10000;
-unsigned long updateEncoderPeriod = 50000;
-
-void loop() {
-  /*
   unsigned long currentTime = micros();
-  //Serial.println(currentTime - prevEncoderUpdateTime);
-  if(currentTime - prevEncoderUpdateTime >= updateEncoderPeriod){
-    double dt = (currentTime - prevEncoderUpdateTime)/ 1000000.0;
-    leftEncoder.updateRPM(dt);
 
-    //Serial.println(leftEncoder.getRPM());
-    leftMotor.setMotorByRPM(200,dt);
-    prevEncoderUpdateTime = currentTime;
-  }
-  */
-  Serial.println(leftEncoder.totalPulseCount);
- 
+  prevControlUpdateTime = currentTime;
+  prevIMUUpdateTime = currentTime;
 }
 
+void loop(){
+
+  unsigned long currentTime = micros();
+
+  //update sensor
+  //set actuator
+
+  if(currentTime - prevIMUUpdateTime >= imuUpdatePeriod){
+    
+    double dt = (currentTime - prevIMUUpdateTime) / 1000000.0;
+
+    imuHeading.updateHeading(dt);
+  }
+
+  if(currentTime - prevControlUpdateTime >= controlUpdatePeriod){
+
+
+    double dt = (currentTime - prevControlUpdateTime) / 1000000.0;
+
+    drivetrain.turnToDeg(90.0, dt);
+
+  }
+
+}
