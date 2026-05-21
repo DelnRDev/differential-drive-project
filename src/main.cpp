@@ -51,7 +51,6 @@ double wrapAngleRad(double angle){
 
 class Encoder{
 public:
-  
 
   Encoder(int pin):encoderPin(pin){
 
@@ -96,6 +95,7 @@ public:
   }
 
   private:
+
     int encoderPin;
     int pulsePerRev = 40;
     volatile long totalPulseCount = 0;
@@ -108,12 +108,13 @@ public:
     long prevPulseCount = 0;
     double currentRPM = 0.0;
 
+  
+
 };
 
 class Motor{
 public:
 
-  
   Motor(int a, int b, int pwm,  Encoder* edr):pin1(a), pin2(b), pwmPin(pwm), encoder(edr){
 
   }
@@ -128,15 +129,13 @@ public:
 
     if(pwm > 0){
       direction = 1;
-      direction = 1;
-      digitalWrite(pin1, LOW);
-      digitalWrite(pin2, HIGH);
+      digitalWrite(pin1, HIGH);
+      digitalWrite(pin2, LOW);
       analogWrite(pwmPin, pwm);
     }else if (pwm < 0){
       direction = -1;
-      direction = -1;
-      digitalWrite(pin1, HIGH);
-      digitalWrite(pin2, LOW);
+      digitalWrite(pin1, LOW);
+      digitalWrite(pin2, HIGH);
       analogWrite(pwmPin, -pwm);
     }else{
       digitalWrite(pin1, LOW);
@@ -151,23 +150,20 @@ public:
 
     double currentRPM = encoder->getCurrentRPM();
 
-    double Kp = 2.0;
-    double Ki = 0.1;
-    double Kd = 0.0;
-    double Kv = 0.0;
+   
 
     double uff = Kv * targetRPM + minRPM; // feed forward pwm
 
     double rpmError = targetRPM - currentRPM;
 
-    double maxIntegralRPMContribution = 40;
+    
     
     errorIntegral += rpmError * dt;
     errorIntegral = clampVal(-maxIntegral, maxIntegral, errorIntegral);
   
     double errorDerivative = (rpmError - prevRPMError) / dt;
 
-    double u = Kp * rpmError + Ki * errorIntegral +Kd * errorDerivative + uff;
+    double u = Kp * rpmError + Ki * errorIntegral + Kd * errorDerivative + uff;
 
     u = clampVal(-maxRPM, maxRPM, u);
 
@@ -176,22 +172,37 @@ public:
     }else if(u < 0 && u > -minRPM){
       u = -minRPM;
     }
+    
+    Serial.print(">");
 
-    Serial.println(currentRPM);
+    Serial.print("rpmError: ");
+    Serial.print(rpmError);
+    Serial.print(",");
+
+    Serial.print("u: ");
+    Serial.println(u);
+
     setMotorByPWM(u);
 
   }
   
   private:
-    Encoder* encoder;
-
+    
     int pin1;
     int pin2;
     int pwmPin;
 
+    Encoder* encoder;
+
+
     int direction = 1;
 
     //motor controller
+    double Kp = 2.0;
+    double Ki = 0.0;
+    double Kd = 0.0;
+    double Kv = 0.0;
+
     int minRPM = 30;
     int maxRPM = 255;
     double maxIntegral = 50.0 ;
@@ -199,6 +210,7 @@ public:
     double errorIntegral = 0.0;
 
 
+  
 
 };
 
@@ -221,6 +233,8 @@ public:
 
     lEdr->begin();
     rEdr->begin();
+    delay(5000);
+
     lMtr->begin();
     rMtr->begin();
 
@@ -235,7 +249,7 @@ public:
 
 };
 
-
+//-------------------------------------------------
 int LEncoderPin = 3;
 int REncoderPin = 2;
 
@@ -258,7 +272,7 @@ Drivetrain drivetrain(&leftEncoder, &rightEncoder, &leftMotor, &rightMotor);
 
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 
-
+//-------------------------------------------------
 void leftEncoderISR(){
   leftEncoder.pulseIncrement();
 }
@@ -270,11 +284,11 @@ void rightEncoderISR(){
 //------------------------------------------------
 
 unsigned long prevEncoderUpdateTime;
-unsigned long prevAutonUpdateTime;
+unsigned long prevControlUpdateTime;
 
 
-unsigned long encoderUpdatePeriod = 10000;
-unsigned long autonUpdatePeriod = 10000;
+unsigned long encoderUpdatePeriod = 50000;
+unsigned long controlUpdatePeriod = 20000;
 //-------------------------------------------------
 enum AutoMode{
   AUTO_IDLE,
@@ -293,41 +307,87 @@ void runAutonomous(double dt){
   
   switch(autoMode){
 
+    case(AUTO_IDLE):
+      drivetrain.setDriveByPWM(0,0);
+      break;
+
     case(AUTO_DRIVE1):
-      bool completed; //motion cmd
-      if(completed){
+      bool completedDrive1; //motion cmd
+      if(completedDrive1){
         autoMode = AUTO_TURN1;
       }
       break;
     
     case(AUTO_TURN1):
-      bool completed; //motion cmd
-      if(completed){
+      bool completedTurn1; //motion cmd
+      if(completedTurn1){
         //setInitialPose to current state
         autoMode = AUTO_DRIVE2;
       }
       break;
       
     case(AUTO_DRIVE2):
-      bool completed; //motion cmd
-      if(completed){
+      bool completedDrive2; //motion cmd
+      if(completedDrive2){
         autoMode = AUTO_TURN2;
       }
       break;
 
     case(AUTO_TURN2):
-      bool completed; //motion cmd
-      if(completed){
+      bool completedTurn2; //motion cmd
+      if(completedTurn2){
         autoMode = DONE;
       }
       break;
-    
+    case(DONE):
+      drivetrain.setDriveByPWM(0,0);
+      break;
+
+
   }
 
 }
+//-------------------------------------------------
 
-//
+void runTest(double dt){
+  /*
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  analogWrite(PWMA, 255);
 
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  analogWrite(PWMB, 255);
+  */
+
+  //leftMotor.setMotorByPWM(255);
+  //rightMotor.setMotorByPWM(255);
+
+  //drivetrain.setDriveByPWM(255,255); TUNE THE SPEED CONTROL SYSTEM !!!!!!!!!!!!!
+
+  //Serial.println(dt);
+  //Serial.print(">");
+  //Serial.print("currentRPM: ");
+  //Serial.println(leftEncoder.getCurrentRPM());
+
+  leftMotor.setMotorByRPM(200, dt);
+}
+
+
+//-------------------------------------------------
+void runManual(double dt){
+
+}
+
+//-------------------------------------------------
+enum ControlMode{
+  TEST,
+  MANUAL,
+  AUTONOMOUS
+};
+
+ControlMode controlMode = TEST;
+//-------------------------------------------------
 void setup() {
 
   Serial.begin(115200);
@@ -341,7 +401,7 @@ void setup() {
 
   unsigned long currentTime = micros();
   prevEncoderUpdateTime = currentTime;
-  prevAutonUpdateTime = currentTime;
+  prevControlUpdateTime = currentTime;
 }
 
 
@@ -349,26 +409,39 @@ void loop() {
  
   unsigned long currentTime = micros();
 
-  //sense -> think -> act
+  //sense -> think -> act -> display
   //sensorInput -> process and calculate and predict -> set the actuator
 
   if(currentTime - prevEncoderUpdateTime >= encoderUpdatePeriod){
     
-    unsigned long dt = (currentTime - prevAutonUpdateTime) / 1000000.0;
+    double dt = (currentTime - prevEncoderUpdateTime) / 1000000.0;
 
     leftEncoder.updateRPM(dt);
     rightEncoder.updateRPM(dt);
 
+    prevEncoderUpdateTime = currentTime;
   }
 
   //updateOdom here
 
-  if(currentTime - prevAutonUpdateTime >= autonUpdatePeriod){
+  if(currentTime - prevControlUpdateTime >= controlUpdatePeriod){
 
-    unsigned long dt = (currentTime - prevAutonUpdateTime) / 1000000.0;
+    double dt = (currentTime - prevControlUpdateTime) / 1000000.0;
+    switch(controlMode){
 
-    runAutonomous(dt);
+      case TEST:
+        runTest(dt);
+        break;
+      case MANUAL:
+        runManual(dt);
+        break;
+      case AUTONOMOUS:
+        runAutonomous(dt);
+        break;
 
+    }
+    
+    prevControlUpdateTime = currentTime;
   }
  
 }
