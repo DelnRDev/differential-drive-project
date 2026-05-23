@@ -11,7 +11,7 @@ This test is part of the larger goal of building a VEX-style robotics control st
 | Parameter | Value |
 |---|---:|
 | Encoder PPR | 40 |
-| Minimum pulse interval | 500 us |
+| Minimum pulse interval | 500 μs |
 | Settle time | 5 s |
 | Measurement time | 5 s |
 | Motor command | Constant PWM |
@@ -116,7 +116,7 @@ This is small compared to the motor speed, so the encoder readings are consisten
 
 ## Conclusion
 
-The encoder counting system is reliable after adding a 500 us minimum pulse interval and using a 5 second settle time.
+The encoder counting system is reliable after adding a 500 μs minimum pulse interval and using a 5 second settle time.
 
 The steady-state RPM at the tested PWM is approximately:
 
