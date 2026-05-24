@@ -66,9 +66,9 @@ test/      -> PlatformIO unit tests
 
 ## Mathematical Notes
 
-- [PID derivation](docs/math/pid-derivation.md)
-- [Odometry derivation](docs/math/odometry-derivation.md)
-- [Encoder RPM calculation](docs/math/encoder-rpm.md)
+- [PID derivation](docs/math-notes/pid-derivation.md)
+- [Odometry derivation](docs/math-notes/odometry-derivation.md)
+- [Encoder RPM calculation](docs/math-notes/encoder-rpm.md)
 
 ## License
 
