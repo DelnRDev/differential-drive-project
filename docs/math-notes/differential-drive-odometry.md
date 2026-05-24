@@ -80,5 +80,5 @@ $$
 \theta_{k+1}=
 \theta_k
 +
-\omega_k\Delta t
+\omega_k \cdot \Delta t
 $$
