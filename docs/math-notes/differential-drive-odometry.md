@@ -62,8 +62,8 @@ $$
 x_{k+1}=
 x_k
 +
-v_k
-\cos(\theta_k)
+v_k \cdot
+\cos(\theta_k) \cdot
 \Delta t
 $$
 
@@ -71,8 +71,8 @@ $$
 y_{k+1}=
 y_k
 +
-v_k
-\sin(\theta_k)
+v_k \cdot
+\sin(\theta_k) \cdot
 \Delta t
 $$
 
