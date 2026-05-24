@@ -9,17 +9,7 @@
 
 Test whether the encoders can measure steady-state RPM reliably.
 
-### Test setup
-
-- PWM: 100
-- Encoder PPR: 40
-- Minimum pulse interval: 500 μs
-- Settle time: 5 s
-- Measurement time: 5 s
-
-
-### Results
-
+### Summary
 
 | Trial | Left RPM | Right RPM |
 |---:|---:|---:|
@@ -32,6 +22,10 @@ Test whether the encoders can measure steady-state RPM reliably.
 ## Conclusion
 
 The encoder readings became stable after using a 500 μs minimum pulse interval and a 5 second settle time. Both motors measured around 290 RPM at the tested PWM.
+
+### Detailed Test
+
+[Encoder RPM Test](tests/encoder-rpm-test.md)
 
 ### Next Step
 
