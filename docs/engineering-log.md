@@ -28,9 +28,6 @@ Test whether the encoders can measure steady-state RPM reliably.
 | 3 | 289.8 | 287.2 |
 | 4 | 290.0 | 286.5 |
 | 5 | 291.0 | 289.5 |
-Average RPM:
-
-276.4
 
 ## Conclusion
 
