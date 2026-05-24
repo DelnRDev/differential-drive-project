@@ -39,12 +39,12 @@ Continuous system:
 
 $$
 \frac{dx}{dt}=
-v\cos(\theta)
+v \cdot \cos(\theta)
 $$
 
 $$
 \frac{dy}{dt}=
-v\sin(\theta)
+v \cdot \sin(\theta)
 $$
 
 $$
