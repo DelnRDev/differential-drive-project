@@ -1,84 +1,163 @@
 # Differential Drive Odometry
 
-## Definitions
+## State Vector
 
-- $v_L$: left wheel velocity
-- $v_R$: right wheel velocity
-- $L$: distance between wheels
-- $(x,y)$: robot position
-- $\theta$: heading
+$$
+\vec{x}_k=
+\begin{bmatrix}
+x_k \\
+y_k \\
+\theta_k
+\end{bmatrix}
+$$
+
+where:
+
+- $x_k$: robot x-position
+- $y_k$: robot y-position
+- $\theta_k$: robot heading
 
 ---
 
-## Linear Velocity
-
-Robot center velocity:
+## Wheel Velocity Vector
 
 $$
-v=
-\frac{v_R+v_L}{2}
-$$
-
----
-
-## Angular Velocity
-
-Robot rotational velocity:
-
-$$
-\omega =
-\frac{v_R-v_L}
-{L}
+\vec{v}_{wheel}=
+\begin{bmatrix}
+v_R \\
+v_L
+\end{bmatrix}
 $$
 
 ---
 
-## State Equations
+## Body Velocity
 
-Continuous system:
-
-$$
-\frac{dx}{dt}=
-v \cdot \cos(\theta)
-$$
+The robot center linear velocity and angular velocity are:
 
 $$
-\frac{dy}{dt}=
-v \cdot \sin(\theta)
+\vec{u}_k=
+\begin{bmatrix}
+v_k \\
+\omega_k
+\end{bmatrix}
 $$
 
+with:
+
 $$
-\frac{d\theta}{dt}=
+\begin{bmatrix}
+v_k \\
+\omega_k
+\end{bmatrix}=
+\begin{bmatrix}
+\frac{1}{2} & \frac{1}{2} \\
+\frac{1}{2L} & -\frac{1}{2L}
+\end{bmatrix}
+\begin{bmatrix}
+v_R \\
+v_L
+\end{bmatrix}
+$$
+
+where $L$ is the half-distance between the left and right wheels.
+
+---
+
+## Rotation Matrix
+
+The robot body-frame forward velocity is transformed into the world frame using:
+
+$$
+R_{WB}(\theta_k)=
+\begin{bmatrix}
+\cos(\theta_k) & -\sin(\theta_k) \\
+\sin(\theta_k) & \cos(\theta_k)
+\end{bmatrix}
+$$
+
+For a differential drive robot, the body-frame velocity is:
+
+$$
+[\vec{v}]_B=
+\begin{bmatrix}
+v_k \\
+0
+\end{bmatrix}
+$$
+
+So the world-frame velocity is:
+
+$$
+[\vec{v}]_W=
+R_{WB}(\theta_k)
+[\vec{v}]_B
+$$
+
+Therefore:
+
+$$
+[\vec{v}]_W=
+\begin{bmatrix}
+v_k\cos(\theta_k) \\
+v_k\sin(\theta_k)
+\end{bmatrix}
+$$
+
+---
+
+## Continuous State Equation
+
+$$
+\frac{d}{dt}
+\begin{bmatrix}
+x \\
+y \\
+\theta
+\end{bmatrix}=
+\begin{bmatrix}
+v\cos(\theta) \\
+v\sin(\theta) \\
 \omega
+\end{bmatrix}
 $$
 
 ---
 
-## Discrete Update
+## Discrete Euler Update
 
 Using Euler integration:
 
 $$
-x_{k+1}=
-x_k
+\vec{x}_{k+1}=
+\vec{x}_k
 +
-v_k \cdot
-\cos(\theta_k) \cdot
 \Delta t
+\begin{bmatrix}
+v_k\cos(\theta_k) \\
+v_k\sin(\theta_k) \\
+\omega_k
+\end{bmatrix}
 $$
 
-$$
-y_{k+1}=
-y_k
-+
-v_k \cdot
-\sin(\theta_k) \cdot
-\Delta t
-$$
+Expanded:
 
 $$
-\theta_{k+1}=
+\begin{bmatrix}
+x_{k+1} \\
+y_{k+1} \\
+\theta_{k+1}
+\end{bmatrix}=
+\begin{bmatrix}
+x_k \\
+y_k \\
 \theta_k
+\end{bmatrix}
 +
-\omega_k \cdot \Delta t
+\Delta t
+\begin{bmatrix}
+v_k\cos(\theta_k) \\
+v_k\sin(\theta_k) \\
+\omega_k
+\end{bmatrix}
 $$
