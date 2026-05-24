@@ -1,12 +1,15 @@
 # Engineering Log
 
-## Encoder RPM Test
+---
 
+## Date: May 23, 2026
+
+## Encoder RPM Test
 ### Goal
 
 Test whether the encoders can measure steady-state RPM reliably.
 
-### Setup
+### Test setup
 
 - PWM: 100
 - Encoder PPR: 40
@@ -14,7 +17,9 @@ Test whether the encoders can measure steady-state RPM reliably.
 - Settle time: 5 s
 - Measurement time: 5 s
 
+
 ### Results
+
 
 | Trial | Left RPM | Right RPM |
 |---:|---:|---:|
@@ -23,8 +28,11 @@ Test whether the encoders can measure steady-state RPM reliably.
 | 3 | 289.8 | 287.2 |
 | 4 | 290.0 | 286.5 |
 | 5 | 291.0 | 289.5 |
+Average RPM:
 
-### Conclusion
+276.4
+
+## Conclusion
 
 The encoder readings became stable after using a 500 μs minimum pulse interval and a 5 second settle time. Both motors measured around 290 RPM at the tested PWM.
 

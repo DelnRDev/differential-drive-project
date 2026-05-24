@@ -1,12 +1,9 @@
 # Differential Drive Robot
 
 ## Overview
+This project aims to build a VEX-style differential drive robot using an Arduino-compatible microcontroller and low-cost hardware. The system will gradually implement motor control, encoder feedback, PID control, IMU integration, and odometry for autonomous movement.
 
-This project is my attempt to rebuild the robotics experience I had in VEX, but now using my current knowledge of embedded systems, control theory, signal processing, mathematical, and robotics software architecture.
-
-Instead of using the VEX V5 ecosystem directly, this project uses low-cost Arduino-compatible hardware to explore the same core robotics ideas from the ground up.
-
-The goal is not to replace the VEX V5 ecosystem or create a commercial robotics platform. This project is primarily for learning, experimentation, and understanding how a competition-style robot control stack works at the hardware and software level.
+The goal is not only to make the robot move, but also to understand the mathematics, control theory, and software architecture behind robotics systems
 
 ---
 
@@ -40,6 +37,7 @@ This project connects my past VEX robotics experience with my current learning i
 | Battery pack | Robot power |
 
 ---
+
 ## Project Structure
 
 ```text
