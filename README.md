@@ -1,43 +1,32 @@
-# Rebuilding My VEX Robotics Experience from Scratch
+# Differential Drive Robot
 
 ## Overview
 
-This project is my attempt to rebuild the robotics experience I had in VEX, but now using my current knowledge of embedded systems, control theory, sensors, odometry, and robotics software architecture.
+This project is my attempt to rebuild the robotics experience I had in VEX, but now using my current knowledge of embedded systems, control theory, signal processing, mathematical, and robotics software architecture.
 
 Instead of using the VEX V5 ecosystem directly, this project uses low-cost Arduino-compatible hardware to explore the same core robotics ideas from the ground up.
 
 The goal is not to replace the VEX V5 ecosystem or create a commercial robotics platform. This project is primarily for learning, experimentation, and understanding how a competition-style robot control stack works at the hardware and software level.
 
+---
+
 ## Motivation
 
-I used to experience robotics mainly through building, driving, and competing in VEX. At that time, many parts of the system were already provided by the VEX ecosystem.
-
-Now, I want to understand what is happening underneath:
-
-- How motor commands become physical motion
-- How encoders measure wheel movement and speed
-- How IMU data becomes heading
-- How odometry estimates robot pose
-- How PID controls speed and heading
-- How autonomous routines are organized in software
-- How a robot control stack can be built from low-level components
-
+I previously participated in VEX Robotics as a builder and driver, but many systems such as PID control, odometry, and sensor fusion were treated as tools that I used rather than fully understood. 
 This project connects my past VEX robotics experience with my current learning in robotics, embedded systems, control systems, and engineering math.
 
-## Project Goals
+---
 
-The long-term goal is to build a mini competition-style robotics control stack, including:
+## Learning Goals
 
-- Motor PWM control
-- Encoder pulse counting
-- Live RPM measurement
-- Motor speed PID
-- IMU heading estimation
-- Differential-drive odometry
-- Motion primitives such as drive-distance and turn-to-angle
-- Autonomous routines using a state machine
-- A simple scheduler for multi-rate robot updates
-- Eventually, path following such as Pure Pursuit
+- Embedded systems
+- Motor control
+- Sensors and feedback
+- PID control
+- Odometry
+- Robotics software architecture
+
+---
 
 ## Hardware
 
@@ -50,32 +39,39 @@ The long-term goal is to build a mini competition-style robotics control stack, 
 | SSD1306 OLED | Debug display |
 | Battery pack | Robot power |
 
-## Software Architecture
-
-The code is being designed as a small robotics framework rather than one giant Arduino sketch.
-
-Planned modules:
-
-- `Motor`
-- `Encoder`
-- `PID`
-- `IMUHeading`
-- `Odometry`
-- `Drivetrain`
-- `Scheduler`
-- `Autonomous`
-
-The general control flow is:
+---
+## Project Structure
 
 ```text
-Sensors
-  ↓
-State estimation
-  ↓
-Control / autonomous decision
-  ↓
-Motor command
-  ↓
-Actuation
-  ↓
-Telemetry
+
+src/       -> source code
+
+include/   -> header files
+
+docs/      -> project documentation
+
+data/      -> CSV test data
+
+images/    -> graphs and screenshots
+
+test/      -> PlatformIO unit tests
+
+```
+
+---
+
+## Documentation
+
+- [Engineering Log](docs/engineering-log.md)
+- [Wiring Guide](docs/wiring.md)
+- [Architecture](docs/architecture.md)
+
+## Mathematical Notes
+
+- [PID derivation](docs/math/pid-derivation.md)
+- [Odometry derivation](docs/math/odometry-derivation.md)
+- [Encoder RPM calculation](docs/math/encoder-rpm.md)
+
+## License
+
+MIT License
