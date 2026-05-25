@@ -133,7 +133,7 @@ After integration, wrap the heading:
 
 $$
 \theta[n]=
-\operatorname{wrap}
+\text{wrap}
 (\theta[n])
 $$
 
