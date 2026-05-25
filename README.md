@@ -22,6 +22,7 @@ This project connects my past VEX robotics experience with my current learning i
 - PID control
 - Odometry
 - Robotics software architecture
+- Linear and nonlinear kalman filter
 
 ---
 
