@@ -66,7 +66,7 @@ Then wrap it:
 
 $$
 e=
-\operatorname{wrap}(e_{raw})
+\text{wrap}(e_{raw})
 $$
 
 ---
@@ -76,7 +76,7 @@ $$
 A common formula is:
 
 $$
-\operatorname{wrap}(\theta)=
+\text{wrap}(\theta)=
 \theta-
 2\pi
 \left\lfloor
