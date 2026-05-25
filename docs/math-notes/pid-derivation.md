@@ -173,7 +173,7 @@ So the commanded PWM is:
 
 $$
 PWM[k]=
-\operatorname{clamp}(u[k], -255, 255)
+\text{clamp}(u[k], -255, 255)
 $$
 
 ---
