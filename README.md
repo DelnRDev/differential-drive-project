@@ -78,7 +78,7 @@ test/      -> PlatformIO unit tests
 ### Control Systems
 
 - [PID Controller Derivation](docs/math/pid-derivation.md)
-- [Exponential Moving Average Filter](docs/math/exponential-moving-average-filter.md)
+- [Exponential Moving Average Filter](docs/math/exponential-filter.md)
 
 ### Sensors and Motors
 
