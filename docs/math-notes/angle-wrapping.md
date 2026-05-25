@@ -166,7 +166,7 @@ Example:
 
 $$
 e_\theta=
-\operatorname{wrap}
+\text{wrap}
 (\theta_{target}-\theta_{robot})
 $$
 
