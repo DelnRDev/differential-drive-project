@@ -1,58 +1,32 @@
 #include <Arduino.h>
 
-int motorPin1 = 3;
-int motorPin2 = 4;
-int motorPwmPin = 10;
-
 int encoderPin = 2;
+int motorPin1 = 4;
+int motorPin2 = 5;
+int motorPwmPin = 8;
+
+unsigned long prevTime;
+unsigned long prevEncoderPulseTime = 0;
+
+unsigned long encoderPulseInterval = 500;
+unsigned long encoderUpdatePeriod = 50000; //50ms
 
 int pulsePerRev = 40;
 long totalPulseCount = 0;
-unsigned prevEncoderUpdateTime = 0;
-unsigned encoderUpdateInterval = 500;
+long prevPulseCount = 0;
 
-double averageRpm = 0.0; //sample average over 
-
-unsigned long motorSettlingPeriod = 5000; //5 sec
-unsigned long samplingPeriod = 5000; //5 sec
-unsigned long nextMeasurementWaitPeriod = 5000;
-
-int testPwm = 255;
-
+double rpm = 0.0;
 
 void encoderISR(){
 
   unsigned long currentTime = micros();
 
-  if(currentTime - prevEncoderUpdateTime){
+  if(currentTime - prevEncoderPulseTime >= encoderPulseInterval){
 
     totalPulseCount++;
 
   }
 
-}
-
-void setMotorPWM(int pwm){
-
-  if(pwm > 0){
-
-    digitalWrite(motorPin1, HIGH);
-    digitalWrite(motorPin2, LOW);
-    analogWrite(motorPwmPin, pwm);
-
-  }else if(pwm < 0){
-
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, HIGH);
-    analogWrite(motorPwmPin, -pwm);
-
-  }else{
-
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, LOW);
-    analogWrite(motorPwmPin, 0);
-
-  }
 
 }
 
@@ -62,7 +36,7 @@ void setup(){
 
   pinMode(encoderPin, INPUT_PULLUP);
   pinMode(motorPin1, OUTPUT);
-  pinMode(motorPin2, OUTPUT); 
+  pinMode(motorPin2, OUTPUT);
   pinMode(motorPwmPin, OUTPUT);
 
   attachInterrupt(digitalPinToInterrupt(encoderPin), encoderISR, FALLING);
@@ -70,47 +44,34 @@ void setup(){
 }
 
 void loop(){
+  
 
-    /*
-    start motor
-    wait 5 sec
-    start count
-    wait 5 sec
-    stop count
-    print result
-    */
+  unsigned long currentTime = micros();
 
-    setMotorPWM(testPwm);
+  if(currentTime - prevTime >= encoderUpdatePeriod){
 
-    delay(motorSettlingPeriod);
-
-    noInterrupts();
-    totalPulseCount = 0;
-    interrupts();
-
-    delay(samplingPeriod);
+    double dt = (currentTime - prevTime) / 1000000.0;
 
     noInterrupts();
     long currentPulseCount = totalPulseCount;
     interrupts();
 
-    averageRpm = (currentPulseCount / pulsePerRev) * (60.0/(samplingPeriod / 1000));
+    long deltaPulseCount = currentPulseCount - prevPulseCount;
 
-    Serial.print("pwm: ");
-    Serial.print(testPwm);
+    rpm = (deltaPulseCount / pulsePerRev) * (60.0 / dt);
 
-    Serial.print("sample period: ");
-    Serial.print(samplingPeriod);
+    Serial.print("rpm: ");
+    Serial.print(rpm);
 
-    Serial.print("pulse count: ");
-    Serial.print(currentPulseCount);
+    prevPulseCount = currentPulseCount;
+    prevTime = currentTime;
 
-    Serial.print("average RPM: ");
-    Serial.print(averageRpm);
+  }
 
-    Serial.print("waiting for next test");
-    delay(nextMeasurementWaitPeriod);
+  /*
+  
 
+
+  */
 
 }
-
