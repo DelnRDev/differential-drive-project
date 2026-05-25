@@ -1,27 +1,17 @@
-# Kalman Filter Math
+# 1D Kalman Filter Math
 
 ## Goal
 
-A Kalman filter estimates the true state of a system by combining:
+Estimate the true state of a 1D system by combining:
 
-```text
-model prediction
-+
-sensor measurement
-```
-
-For a robot, this can mean estimating:
-
-- position
-- velocity
-- heading
-- sensor bias
+- model prediction
+- sensor measurement
 
 ---
 
 ## State Vector
 
-Example 1D state:
+For 1D position and velocity:
 
 $$
 \vec{x}_k=
@@ -38,202 +28,9 @@ where:
 
 ---
 
-## System Model
+## State Transition Model
 
-The state update model is:
-
-$$
-\vec{x}_k=
-A\vec{x}_{k-1}
-+
-B\vec{u}_k
-+
-\vec{w}_k
-$$
-
-where:
-
-- $A$ is the state transition matrix
-- $B$ is the input matrix
-- $\vec{u}_k$ is the control input
-- $\vec{w}_k$ is process noise
-
-The process noise is assumed to have covariance:
-
-$$
-Q
-$$
-
----
-
-## Measurement Model
-
-The sensor measurement is modeled as:
-
-$$
-\vec{z}_k=
-H\vec{x}_k
-+
-\vec{v}_k
-$$
-
-where:
-
-- $\vec{z}_k$ is the measurement vector
-- $H$ maps the state to the measurement
-- $\vec{v}_k$ is measurement noise
-
-The measurement noise is assumed to have covariance:
-
-$$
-R
-$$
-
----
-
-# Kalman Filter Algorithm
-
-The Kalman filter has two main steps:
-
-```text
-Prediction
-↓
-Correction
-```
-
----
-
-## 1. Prediction Step
-
-### Predicted State
-
-$$
-\hat{\vec{x}}_{k|k-1}=
-A\hat{\vec{x}}_{k-1|k-1}
-+
-B\vec{u}_k
-$$
-
-This means:
-
-```text
-current estimate
-=
-model prediction from previous estimate
-```
-
----
-
-### Predicted Covariance
-
-$$
-P_{k|k-1}=
-AP_{k-1|k-1}A^T
-+
-Q
-$$
-
-where:
-
-- $P$ represents uncertainty in the state estimate
-- $Q$ represents uncertainty added by the model
-
----
-
-## 2. Correction Step
-
-### Innovation / Measurement Residual
-
-$$
-\vec{y}_k =
-\vec{z}_k-
-H\hat{\vec{x}}_{k|k-1}
-$$
-
-This means:
-
-```text
-innovation
-=
-actual measurement
--
-predicted measurement
-```
-
----
-
-### Innovation Covariance
-
-$$
-S_k=
-HP_{k|k-1}H^T
-+
-R
-$$
-
-This represents uncertainty in the innovation.
-
----
-
-### Kalman Gain
-
-$$
-K_k=
-P_{k|k-1}H^T S_k^{-1}
-$$
-
-The Kalman gain controls how much the filter trusts the sensor measurement.
-
----
-
-### Updated State Estimate
-
-$$
-\hat{\vec{x}}_{k|k}=
-\hat{\vec{x}}_{k|k-1}
-+
-K_k\vec{y}_k
-$$
-
----
-
-### Updated Covariance
-
-Simple form:
-
-$$
-P_{k|k}=
-(I-K_kH)P_{k|k-1}
-$$
-
-More numerically stable Joseph form:
-
-$$
-P_{k|k}=
-(I-K_kH)P_{k|k-1}(I-K_kH)^T
-+
-K_kRK_k^T
-$$
-
----
-
-# Example: 1D Position and Velocity
-
-## State
-
-$$
-\vec{x}_k=
-\begin{bmatrix}
-p_k \\
-v_k
-\end{bmatrix}
-$$
-
----
-
-## State Transition Matrix
-
-Using constant velocity motion:
+Assume constant velocity during one sample interval $\Delta t$:
 
 $$
 p_k=
@@ -250,21 +47,13 @@ $$
 Matrix form:
 
 $$
-\begin{bmatrix}
-p_k \\
-v_k
-\end{bmatrix}=
-\begin{bmatrix}
-1 & \Delta t \\
-0 & 1
-\end{bmatrix}
-\begin{bmatrix}
-p_{k-1} \\
-v_{k-1}
-\end{bmatrix}
+\vec{x}_k=
+A\vec{x}_{k-1}
++
+\vec{w}_k
 $$
 
-So:
+where:
 
 $$
 A=
@@ -276,16 +65,27 @@ $$
 
 ---
 
-## Measurement Matrix
+## Measurement Model
 
 If the sensor only measures position:
 
 $$
 z_k=
 p_k
++
+v_k^{noise}
 $$
 
 then:
+
+$$
+z_k=
+H\vec{x}_k
++
+v_k^{noise}
+$$
+
+where:
 
 $$
 H=
@@ -294,110 +94,165 @@ H=
 \end{bmatrix}
 $$
 
-because:
+---
+
+## Prediction Step
+
+Predicted state:
 
 $$
-z_k=
-\begin{bmatrix}
-1 & 0
-\end{bmatrix}
-\begin{bmatrix}
-p_k \\
-v_k
-\end{bmatrix}
+\hat{\vec{x}}_{k|k-1}=
+A\hat{\vec{x}}_{k-1|k-1}
+$$
+
+Predicted covariance:
+
+$$
+P_{k|k-1}=
+AP_{k-1|k-1}A^T
++
+Q
 $$
 
 ---
 
-## Meaning of $Q$, $R$, and $P$
+## Correction Step
 
-### $P$: Estimate uncertainty
+Measurement residual:
 
 $$
-P_k=
-\begin{bmatrix}
-\sigma_p^2 & \sigma_{pv} \\
-\sigma_{vp} & \sigma_v^2
-\end{bmatrix}
+y_k=
+z_k-
+H\hat{\vec{x}}_{k|k-1}
 $$
 
-Larger $P$ means:
+Innovation covariance:
 
-```text
-I am less confident in my current estimate.
-```
+$$
+S_k=
+HP_{k|k-1}H^T
++
+R
+$$
+
+Kalman gain:
+
+$$
+K_k=
+P_{k|k-1}H^TS_k^{-1}
+$$
+
+Updated state estimate:
+
+$$
+\hat{\vec{x}}_{k|k}=
+\hat{\vec{x}}_{k|k-1}
++
+K_ky_k
+$$
+
+Updated covariance:
+
+$$
+P_{k|k}=
+(I-K_kH)P_{k|k-1}
+$$
 
 ---
 
-### $Q$: Process noise covariance
+## Meaning of $P$, $Q$, and $R$
 
-$Q$ describes how much uncertainty the motion model adds.
+### $P$: estimate uncertainty
 
-Large $Q$ means:
+Large $P$ means the filter is less confident in its current estimate.
 
-```text
-I do not fully trust my model.
-```
+### $Q$: process noise covariance
 
-Small $Q$ means:
+Large $Q$ means the filter trusts the motion model less.
 
-```text
-I trust my model more.
-```
+### $R$: measurement noise covariance
 
----
-
-### $R$: Measurement noise covariance
-
-$R$ describes how noisy the sensor is.
-
-Large $R$ means:
-
-```text
-I trust the sensor less.
-```
-
-Small $R$ means:
-
-```text
-I trust the sensor more.
-```
+Large $R$ means the filter trusts the sensor less.
 
 ---
 
 ## Robotics Interpretation
 
-For a robot:
+Prediction:
 
 ```text
-Prediction:
-Use motor/encoder/odometry model to guess where the robot is.
+Use the previous position and velocity to predict the next position.
+```
 
 Correction:
-Use sensor measurement to correct the guess.
+
+```text
+Use the sensor measurement to correct the prediction.
 ```
 
 Example:
 
 ```text
-Encoder odometry says:
-x = 1.05 m
-
-External sensor says:
-x = 1.00 m
-
-Kalman filter combines them:
-x ≈ 1.02 m
+Prediction says:  p = 1.05 m
+Sensor says:      p = 1.00 m
+Filter estimate:  p ≈ somewhere between them
 ```
 
 ---
 
-## Notes
+## C++ Implementation
 
-A basic Kalman filter assumes:
+```cpp
+struct Kalman1D {
+    double p;
+    double v;
 
-- linear system model
-- Gaussian noise
-- known covariance matrices
+    double P00;
+    double P01;
+    double P10;
+    double P11;
 
-For nonlinear robot motion, an Extended Kalman Filter is usually used.
+    double Q00;
+    double Q01;
+    double Q10;
+    double Q11;
+
+    double R;
+};
+
+void predict(Kalman1D& kf, double dt) {
+    kf.p = kf.p + kf.v * dt;
+
+    double P00 = kf.P00 + dt * kf.P10 + dt * kf.P01 + dt * dt * kf.P11 + kf.Q00;
+    double P01 = kf.P01 + dt * kf.P11 + kf.Q01;
+    double P10 = kf.P10 + dt * kf.P11 + kf.Q10;
+    double P11 = kf.P11 + kf.Q11;
+
+    kf.P00 = P00;
+    kf.P01 = P01;
+    kf.P10 = P10;
+    kf.P11 = P11;
+}
+
+void update(Kalman1D& kf, double measuredPosition) {
+    double y = measuredPosition - kf.p;
+
+    double S = kf.P00 + kf.R;
+
+    double K0 = kf.P00 / S;
+    double K1 = kf.P10 / S;
+
+    kf.p = kf.p + K0 * y;
+    kf.v = kf.v + K1 * y;
+
+    double P00 = (1.0 - K0) * kf.P00;
+    double P01 = (1.0 - K0) * kf.P01;
+    double P10 = kf.P10 - K1 * kf.P00;
+    double P11 = kf.P11 - K1 * kf.P01;
+
+    kf.P00 = P00;
+    kf.P01 = P01;
+    kf.P10 = P10;
+    kf.P11 = P11;
+}
+```
