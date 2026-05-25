@@ -57,19 +57,41 @@ test/      -> PlatformIO unit tests
 ```
 
 ---
-
 ## Documentation
 
 - [Engineering Log](docs/engineering-log.md)
-- [Wiring Guide](docs/wiring.md)
-- [Architecture](docs/architecture.md)
+- [Wiring](docs/wiring.md)
+- [Software Architecture](docs/architecture.md)
+- [Tests](docs/tests/)
+
+---
 
 ## Mathematical Notes
 
-- [PID derivation](docs/math-notes/pid-derivation.md)
-- [Odometry derivation](docs/math-notes/differential-drive-odometry.md)
-- [Encoder RPM calculation](docs/math-notes/encoder-rpm.md)
+### Robotics
 
+- [Differential Drive Odometry](docs/math/differential-drive-odometry.md)
+- [Coordinate Transforms](docs/math/coordinate-transforms.md)
+- [IMU Yaw Integration](docs/math/imu-yaw-integration.md)
+- [Angle Wrapping](docs/math/angle-wrapping.md)
+
+### Control Systems
+
+- [PID Controller Derivation](docs/math/pid-derivation.md)
+- [Exponential Moving Average Filter](docs/math/exponential-moving-average-filter.md)
+
+### Sensors and Motors
+
+- [Encoder RPM Calculation](docs/math/encoder-rpm.md)
+- [Motor PWM Response](docs/math/motor-pwm-response.md)
+
+### State Estimation
+
+- [1D Kalman Filter](docs/math/kalman-filter-1d.md)
+- [2D Kalman Filter](docs/math/kalman-filter-2d.md)
+- [Extended Kalman Filter](docs/math/extended-kalman-filter.md)
+
+  
 ## License
 
 MIT License
